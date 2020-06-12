@@ -4,6 +4,8 @@ class MainScene extends Phaser.Scene {
         
     }
 
+    
+
     preload() {
         this.load.image('slotContainer', 'assets/slotContainer.png');
         this.load.image('potion1', 'assets/potion1.png');
@@ -28,19 +30,45 @@ class MainScene extends Phaser.Scene {
         });
         text.setAngle(-3);
         
-        //add spin button
+
         var spinButton = this.add.image(960,875, 'spinButton');
         spinButton.setScale(1.7);
-        
-        //allow button to be clicked on
+
         spinButton.setInteractive();
+        
         spinButton.on('spinButtonClicked', this.onSpinClicked, this);
 
-        //allow any object to be clicked on
-        this.input.on('gameObjectClicked', function (pointer, gameObject) {
-            gameObject.emit('spinButtonClicked', gameObject); 
+        this.input.on('gameobjectup', function (pointer, gameObject) {
+            gameObject.emit('spinButtonClicked', gameObject);
         }, this);;
+
+        var potions = [];
+        
+        var container = this.add.container(400, 300);
+
+        for(let i=1; i<5; i++){
+            var sprite= this.add.sprite(95, -255+233*i, "potion"+i);
+            sprite.setScale(1.7);
+            potions.push(sprite);
+            container.add(sprite);
+        }
+
+
+        //limit the potions to show only inside the container
+        var mask = this.add.graphics()
+	                    .setVisible(false)
+	                    .fillStyle(0xFFFFFF)             //white
+	                    .fillRect(377, 160, 1175, 705)   //(pos.x, pos.y, width, height)
+                        .createGeometryMask();
+        
+        //apply the mask on every object
+        potions.forEach(obj => obj.setMask(mask));
+
+        console.log(potions);
+
     }
+
+    
 
     onSpinClicked(spinButton) {
         spinButton.setAlpha(0.5);
