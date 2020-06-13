@@ -13,24 +13,73 @@ class MainScene extends Phaser.Scene {
         this.load.image('potion3', 'assets/potion3.png');
         this.load.image('potion4', 'assets/potion4.png');
         this.load.image('spinButton', 'assets/button_spin.png');
+       
     }
 
+
+  
     create() {
         
         //add container to display
-        this.slotContainer = this.add.image(250,-20, 'slotContainer').setOrigin(0,0);
-        this.slotContainer.setScale(1.7);
+        this.slotContainer = this.add.image(500,100, 'slotContainer').setOrigin(0,0);
+        this.slotContainer.setScale(1.2);
         
         
         //add title text 
-        this.text= this.add.text(820, 83, "Slot House", {
-                                font: "58px Arial",
+        this.text= this.add.text(710, 65, "Slot House", {
+                                font: "50px Arial",
                                 color: "purple",
                                 align: "center"});
         this.text.setAngle(-3);
         
 
-        this.spinButton = this.add.image(960,875, 'spinButton');
+        
+
+        var potions = [];
+       // var reels = this.add.group();
+       this.reels = this.add.container(0,0);
+       this.temp = [];
+        
+    
+    for(let j=0 ; j<5 ; j++){ 
+        var pot = [];
+        for(let i=1; i<5; i++){
+            var sprite= this.add.sprite(675+165*j, 145+165*i, "potion"+i);
+            sprite.setScale(1.2);
+
+            //limit the potions to show only inside the slot container
+            //and apply the mask on every potion
+            sprite.setMask(this.add.graphics()
+                            .setVisible(false)
+                            .fillStyle(0xFFFFFF)             //white
+                            .fillRect(590, 225, 830, 497)   //(pos.x, pos.y, width, height)
+                            .createGeometryMask());
+            pot.push(sprite);
+        }
+        this.reels.add(pot);
+        this.temp.push(this.reels);
+    
+    }
+
+ /*   var timeline= this.tweens.timeline({
+        targets: reels,
+        ease: 'Linear',
+        duration: 1000, 
+        loop: 0,
+
+        tweens: [
+            {
+            targets: reels.first,
+            y: 1000,
+            duration: 1000,
+            repeat: 10,
+            delay: 1000,
+            }
+        ]
+
+    });*/
+
+    this.spinButton = this.add.image(960,875, 'spinButton');
         this.spinButton.setScale(1.7);
 
         this.spinButton.setInteractive();
@@ -39,65 +88,100 @@ class MainScene extends Phaser.Scene {
 
         this.input.on('gameobjectup', function (pointer, gameObject) {
             gameObject.emit('spinButtonClicked', gameObject);
-        }, this);;
-
-        var potions = [];
-       // var reels = this.add.group();
-       var reels = this.add.container(0,0);
-        
-     
-
-        for(let i=1; i<5; i++){
-            var sprite= this.add.sprite(495, 43+235*i, "potion"+i);
-            sprite.setScale(1.7);
-            potions.push(sprite);
-        }
-       
-
-        //reels.addMultiple(potions, this);
-        //limit the potions to show only inside the container
-        //and apply the mask on every potion
-        potions.forEach(potions => potions.setMask(this.add.graphics()
-                                                .setVisible(false)
-                                                .fillStyle(0xFFFFFF)             //white
-                                                .fillRect(377, 160, 1175, 705)   //(pos.x, pos.y, width, height)
-                                                .createGeometryMask()));
-
-        console.log(potions);
-        console.log(potions[0].x);
-        console.log(potions[0].y);
-
-        //reels.addMultiple(potions);
-        reels.add(potions);
+        }, this);
 
 
 
-        this.tweens.add({
-            targets: reels,
-            y: 1000 ,
-            duretion: 100,
-            repeat: -1
-        });
 
-}
-
-    
+}  
 
     onSpinClicked() {
         this.spinButton.setAlpha(0.5);
+        this.stop= false;
+        window.setTimeout(() => { this.spinButton.setAlpha(1); } ,1000);
+
+        this.reel();
+        
+        this.temp.forEach(con => {
+            console.log(this);
+            var tween = this.tweens.add({
+                targets: con,
+                y: 2000,
+                duration: 250,
+                repeat: 1,
+                delay: 0,
+            });
+            console.log(tween);
+            window.setTimeout(() => { 
+                tween.stop();
+                this.stop= true;
+            } ,2000);
+        });
+        
+        
+        
     }
 
-   /* update(){
-        for(let i=0; i<4; i++){
-            potions[i].y +=2;
+    createReel(){
+        console.log("im in create");
 
-            if (potions[i].y > 950)
-            {
-                potions[i].y = -150;
-            }
-        }
+        this.moo = [];
+        for(let j=0 ; j<5 ; j++){ 
+            var pot = [];
+            for(let i=1; i<5; i++){
+                var sprite= this.add.sprite(675+165*j, -515+165*i, "potion"+i);
+                
+                sprite.setScale(1.2);
     
-    }*/
+                //limit the potions to show only inside the slot container
+                //and apply the mask on every potion
+                sprite.setMask(this.add.graphics()
+                                .setVisible(false)
+                                .fillStyle(0xFFFFFF)             //white
+                                .fillRect(590, 225, 830, 497)   //(pos.x, pos.y, width, height)
+                                .createGeometryMask());
+                pot.push(sprite);
+            }
+            this.reels.add(pot);
+            this.moo.push(this.reels);
+
+            this.moo.forEach(con => {
+               // console.log(this);
+                var tween = this.tweens.add({
+                    targets: con,
+                    y: 2000,
+                    duration: 300,
+                    repeat: 1,
+                    delay: 0,
+                });
+               // console.log(tween);
+                window.setTimeout(() => { 
+                    tween.stop();
+                    this.stop= true;
+                } ,2000);
+            });
+        
+        }
+
+
+// Math.floor(Math.random() * 4)
+    }
+
+    reel = () => {
+        if (!this.stop) {
+            console.log("im in the if!");
+            this.createReel();
+            window.setTimeout(() => {
+                console.log("im in the loop!");
+                this.reel();
+            }, 500);
+        }
+        else{
+        console.log("false!");
+        }
+    };
+
+
 
    
 
