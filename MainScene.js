@@ -2,17 +2,27 @@ class MainScene extends Phaser.Scene {
     constructor() {
         super('MainScene');
         
+        
     }
 
     
 
     preload() {
+        //load images
         this.load.image('slotContainer', 'assets/slotContainer.png');
         this.load.image('potion1', 'assets/potion1.png');
         this.load.image('potion2', 'assets/potion2.png');
         this.load.image('potion3', 'assets/potion3.png');
         this.load.image('potion4', 'assets/potion4.png');
+        this.load.image('doubleReel', 'assets/doubleReel.png');
+
+        //load buttons
         this.load.image('spinButton', 'assets/button_spin.png');
+        this.load.image('stopButton', 'assets/button_stop.png');
+
+        //load audio
+        this.load.audio('backgroundMusic', ['assets/BG_Music.wav']);
+        this.load.audio('spinMusic', ['assets/Spin.wav']);
        
     }
 
@@ -26,64 +36,48 @@ class MainScene extends Phaser.Scene {
         
         
         //add title text 
-        this.text= this.add.text(710, 65, "Slot House", {
-                                font: "50px Arial",
-                                color: "purple",
-                                align: "center"});
-        this.text.setAngle(-3);
-        
+        this.text= this.add.text(890, 173, "Slots House", {
+                                            font: "40px Arial",
+                                            color: "red",
+                                            align: "center"
+                                            });
+        this.text.setAngle(-2);
 
-        
+        //add and play background music
+        this.backgroundMusic = this.sound.add("backgroundMusic", { loop: "true" });
+        this.backgroundMusic.play();
 
-        var potions = [];
-       // var reels = this.add.group();
-       this.reels = this.add.container(0,0);
-       this.temp = [];
-        
-    
-    for(let j=0 ; j<5 ; j++){ 
-        var pot = [];
-        for(let i=1; i<5; i++){
-            var sprite= this.add.sprite(675+165*j, 145+165*i, "potion"+i);
-            sprite.setScale(1.2);
 
-            //limit the potions to show only inside the slot container
-            //and apply the mask on every potion
-            sprite.setMask(this.add.graphics()
-                            .setVisible(false)
-                            .fillStyle(0xFFFFFF)             //white
-                            .fillRect(590, 225, 830, 497)   //(pos.x, pos.y, width, height)
-                            .createGeometryMask());
-            pot.push(sprite);
+
+        //add the potions to display in the slot container (using mask)
+        this.potions = [];   
+        
+        for(let j=0 ; j<5 ; j++){ 
+            
+                var sprite= this.add.sprite(675+165*j, 225, "doubleReel");
+                sprite.setScale(1.2);
+               
+                //limit the potions to show only inside the slot container
+                //and apply the mask on every potion
+                sprite.setMask(this.add.graphics()
+                                .setVisible(false)
+                                .fillStyle(0xFFFFFF)             //white
+                                .fillRect(590, 225, 830, 499)   //(pos.x, pos.y, width, height)
+                                .createGeometryMask());
+
+                    
+                this.potions.push(sprite);
+        
         }
-        this.reels.add(pot);
-        this.temp.push(this.reels);
-    
-    }
 
- /*   var timeline= this.tweens.timeline({
-        targets: reels,
-        ease: 'Linear',
-        duration: 1000, 
-        loop: 0,
-
-        tweens: [
-            {
-            targets: reels.first,
-            y: 1000,
-            duration: 1000,
-            repeat: 10,
-            delay: 1000,
-            }
-        ]
-
-    });*/
-
-    this.spinButton = this.add.image(960,875, 'spinButton');
+        //add the spin button
+        this.spinButton = this.add.image(980,800, 'spinButton');
         this.spinButton.setScale(1.7);
 
+        //allow pressing the button
         this.spinButton.setInteractive();
-        
+
+        //when the button is pressed- go to onSpinClicked function
         this.spinButton.on('spinButtonClicked', this.onSpinClicked, this);
 
         this.input.on('gameobjectup', function (pointer, gameObject) {
@@ -91,98 +85,64 @@ class MainScene extends Phaser.Scene {
         }, this);
 
 
+        //add the stop button
+        this.stopButton = this.add.image(980,800, 'stopButton');
+        this.stopButton.setScale(1.7);
 
+        //when the game starts the button is not available
+        this.stopButton.setVisible(false);
+        this.stopButton.setInteractive(false);
+    }  
 
-}  
 
     onSpinClicked() {
-        this.spinButton.setAlpha(0.5);
-        this.stop= false;
-        window.setTimeout(() => { this.spinButton.setAlpha(1); } ,1000);
+        //play spinning music
+        this.spinMusic = this.sound.add("spinMusic", {loop: "false"}); 
+        this.spinMusic.play();
 
-        this.reel();
+        //show stop button while spinning
+        this.spinButton.setAlpha(0);  
+        this.stopButton.setVisible(true);
+
+        this.stopButton.setInteractive();
+
+        this.stopButton.on('stopButtonClicked', this.onStopClicked, this);
+
+        this.input.on('gameobjectup', function (pointer, gameObject) {
+            gameObject.emit('stopButtonClicked', gameObject);
+        }, this);
+
+
+
+        //enable the spin button again after the reels stop to spin
+        window.setTimeout(() => { 
+            this.stopButton.setVisible(false); 
+            this.spinButton.setAlpha(1);
+        }, 4500);
         
-        this.temp.forEach(con => {
-            console.log(this);
-            var tween = this.tweens.add({
-                targets: con,
-                y: 2000,
-                duration: 250,
-                repeat: 1,
-                delay: 0,
+
+
+       //add the spinning animation
+        for(let i=0; i<this.potions.length; i ++){
+            this.tween= this.tweens.add({
+                targets: this.potions[i],
+                y: 560,
+                x: 675 + (165 * i)  ,
+                duration: 20 +(20* i),
+                yoyo: true,
+                loop: 20,
             });
-            console.log(tween);
-            window.setTimeout(() => { 
-                tween.stop();
-                this.stop= true;
-            } ,2000);
-        });
-        
-        
-        
-    }
-
-    createReel(){
-        console.log("im in create");
-
-        this.moo = [];
-        for(let j=0 ; j<5 ; j++){ 
-            var pot = [];
-            for(let i=1; i<5; i++){
-                var sprite= this.add.sprite(675+165*j, -515+165*i, "potion"+i);
-                
-                sprite.setScale(1.2);
-    
-                //limit the potions to show only inside the slot container
-                //and apply the mask on every potion
-                sprite.setMask(this.add.graphics()
-                                .setVisible(false)
-                                .fillStyle(0xFFFFFF)             //white
-                                .fillRect(590, 225, 830, 497)   //(pos.x, pos.y, width, height)
-                                .createGeometryMask());
-                pot.push(sprite);
-            }
-            this.reels.add(pot);
-            this.moo.push(this.reels);
-
-            this.moo.forEach(con => {
-               // console.log(this);
-                var tween = this.tweens.add({
-                    targets: con,
-                    y: 2000,
-                    duration: 300,
-                    repeat: 1,
-                    delay: 0,
-                });
-               // console.log(tween);
-                window.setTimeout(() => { 
-                    tween.stop();
-                    this.stop= true;
-                } ,2000);
-            });
-        
-        }
-
-
-// Math.floor(Math.random() * 4)
-    }
-
-    reel = () => {
-        if (!this.stop) {
-            console.log("im in the if!");
-            this.createReel();
-            window.setTimeout(() => {
-                console.log("im in the loop!");
-                this.reel();
-            }, 500);
-        }
-        else{
-        console.log("false!");
-        }
-    };
-
-
 
    
+        }
+    }
 
+
+    //function is not implenented yet
+
+    onStopClicked(){
+        console.log("in stop");
+    }
+ 
+  
 }
